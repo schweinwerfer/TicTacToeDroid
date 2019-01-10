@@ -1,13 +1,13 @@
 package de.ora.game.tictactoe;
 
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import java.io.File;
@@ -61,7 +61,17 @@ public class TicTacToeActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        textView.setText("Neues Spiel. Gegner: " + gameEngine.getAgent().getName());
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+                newGame();
+            }
+        });
+
+        newGame();
     }
 
     @Override
@@ -94,15 +104,25 @@ public class TicTacToeActivity extends AppCompatActivity {
     }
 
     public void gameEnded(Player winner) {
-        AlertDialog alertDialog = new AlertDialog.Builder(TicTacToeActivity.this).create();
-        alertDialog.setTitle("Spiel beendet");
-        alertDialog.setMessage("Gewinner: " + winner.name());
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-        alertDialog.show();
+        textView.append(System.lineSeparator());
+        textView.append("Spiel beendet.");
+        textView.append(System.lineSeparator());
+        if (gameEngine.getComputerPlayer() == winner) {
+            textView.append("Du hast verloren!");
+        } else if (winner != Player.NONE) {
+            textView.append("Du hast gewonnen!");
+        } else {
+            textView.append("Unentschieden.");
+        }
+//        AlertDialog alertDialog = new AlertDialog.Builder(TicTacToeActivity.this).create();
+//        alertDialog.setTitle("Spiel beendet");
+//        alertDialog.setMessage("Gewinner: " + winner.name());
+//        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+//                new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        dialog.dismiss();
+//                    }
+//                });
+//        alertDialog.show();
     }
 }
