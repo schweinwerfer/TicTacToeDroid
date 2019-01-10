@@ -223,7 +223,7 @@ public class PlayingAgent {
     }
 
     public File store(final File dir) throws IOException {
-        return store(dir, "agent_" + winCnt + "-" + drawCnt + "-" + loseCnt + "_" + System.currentTimeMillis() + ".json");
+        return store(dir, "agent_" + winCnt + "-" + drawCnt + "-" + loseCnt + "_" + getName() + "-" + System.currentTimeMillis() + ".json");
     }
 
     public File store(final String filename) throws IOException {
