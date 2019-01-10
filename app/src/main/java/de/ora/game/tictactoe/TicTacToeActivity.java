@@ -10,8 +10,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import de.ora.game.tictactoe.game.GameEngine;
 import de.ora.game.tictactoe.game.Player;
+import de.ora.game.tictactoe.genetic.PlayingAgent;
 import de.ora.game.tictactoe.view.BoardView;
 
 /**
@@ -20,6 +27,7 @@ import de.ora.game.tictactoe.view.BoardView;
 public class TicTacToeActivity extends AppCompatActivity {
     private BoardView boardView;
     private GameEngine gameEngine;
+    private TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +42,26 @@ public class TicTacToeActivity extends AppCompatActivity {
         boardView.setGameEngine(gameEngine);
         boardView.setMainActivity(this);
 
-        TextView textView = findViewById(R.id.TextView01);
+        textView = findViewById(R.id.TextView01);
         textView.setBackgroundColor(Color.BLACK);
         textView.setTextColor(Color.LTGRAY);
         textView.setText("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.");
 
+        String[] agents;
+        List<PlayingAgent> agentList = new ArrayList<>();
+        try {
+            String path = "agents";
+            agents = getAssets().list(path);
+            for (String agent : agents) {
+                InputStream inputStream = getAssets().open(path + File.separator + agent);
+                agentList.add(PlayingAgent.load(inputStream));
+            }
+            gameEngine.setAgents(agentList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        textView.setText("Neues Spiel. Gegner: " + gameEngine.getAgent().getName());
     }
 
     @Override
@@ -66,6 +89,8 @@ public class TicTacToeActivity extends AppCompatActivity {
     private void newGame() {
         gameEngine.newGame();
         boardView.invalidate();
+        textView.invalidate();
+        textView.setText("Neues Spiel. Gegner: " + gameEngine.getAgent().getName());
     }
 
     public void gameEnded(Player winner) {

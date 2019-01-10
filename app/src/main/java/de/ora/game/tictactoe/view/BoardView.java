@@ -44,6 +44,7 @@ public class BoardView extends View {
 
     public void setGameEngine(GameEngine g) {
         gameEngine = g;
+        gameEngine.newGame();
     }
 
     @Override
@@ -64,6 +65,13 @@ public class BoardView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        Player computerPlayer = gameEngine.getComputerPlayer();
+        Player activePlayer = gameEngine.getActivePlayer();
+        if (computerPlayer == activePlayer) {
+            return super.onTouchEvent(event);
+        }
+
+
         Player winner = gameEngine.checkWinner();
         int possibleMoves = gameEngine.possibleMoves();
         if (possibleMoves == 0) {
@@ -82,7 +90,9 @@ public class BoardView extends View {
                 activity.gameEnded(winner);
             } else {
                 // computer plays ...
-                valid = gameEngine.play(x, y);
+                if (!gameEngine.computer()) {
+                    valid = gameEngine.play(x, y);
+                }
                 invalidate();
 
                 winner = gameEngine.checkWinner();

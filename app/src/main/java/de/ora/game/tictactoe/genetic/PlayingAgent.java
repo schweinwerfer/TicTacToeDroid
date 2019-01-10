@@ -8,6 +8,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -140,6 +141,7 @@ public class PlayingAgent {
         return name;
     }
 
+    @JsonIgnore
     public double getFitness() {
         double successCnt = winCnt + (double) drawCnt;
         double playedGamesCnt = successCnt + loseCnt;
@@ -147,6 +149,7 @@ public class PlayingAgent {
         return successCnt / playedGamesCnt;
     }
 
+    @JsonIgnore
     public String getDetailedScore() {
         return String.valueOf(getFitness()) + " (w: " + winCnt + ", l: " + loseCnt + ", d: " + drawCnt + ")";
     }
@@ -234,6 +237,11 @@ public class PlayingAgent {
         }
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(file, PlayingAgent.class);
+    }
+
+    public static PlayingAgent load(final InputStream stream) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(stream, PlayingAgent.class);
     }
 
     public static PlayingAgent load(final String filename) throws IOException {
