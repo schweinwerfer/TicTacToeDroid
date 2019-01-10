@@ -9,7 +9,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
-import de.ora.game.tictactoe.MainActivity;
+import de.ora.game.tictactoe.TicTacToeActivity;
 import de.ora.game.tictactoe.game.GameEngine;
 import de.ora.game.tictactoe.game.Player;
 
@@ -21,7 +21,7 @@ public class BoardView extends View {
     private int width, height, eltW, eltH;
     private Paint gridPaint, oPaint, xPaint;
     private GameEngine gameEngine;
-    private MainActivity activity;
+    private TicTacToeActivity activity;
 
     public BoardView(Context context) {
         super(context);
@@ -38,7 +38,7 @@ public class BoardView extends View {
         xPaint.setColor(Color.BLUE);
     }
 
-    public void setMainActivity(MainActivity a) {
+    public void setMainActivity(TicTacToeActivity a) {
         activity = a;
     }
 

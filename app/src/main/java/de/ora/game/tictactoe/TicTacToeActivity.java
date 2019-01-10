@@ -17,7 +17,7 @@ import de.ora.game.tictactoe.view.BoardView;
 /**
  * See https://www.ssaurel.com/blog/learn-to-create-a-tic-tac-toe-game-for-android/
  */
-public class MainActivity extends AppCompatActivity {
+public class TicTacToeActivity extends AppCompatActivity {
     private BoardView boardView;
     private GameEngine gameEngine;
 
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void gameEnded(Player winner) {
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        AlertDialog alertDialog = new AlertDialog.Builder(TicTacToeActivity.this).create();
         alertDialog.setTitle("Spiel beendet");
         alertDialog.setMessage("Gewinner: " + winner.name());
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
