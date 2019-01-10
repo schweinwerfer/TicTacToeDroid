@@ -8,6 +8,10 @@ public class GameEngine {
         return winner;
     }
 
+    public int possibleMoves() {
+        return board.freeCells().size();
+    }
+
     public boolean play(int x, int y) {
         return board.set(x, y);
     }
