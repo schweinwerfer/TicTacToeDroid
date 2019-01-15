@@ -1,27 +1,27 @@
 package de.ora.neural.core.net;
 
-import de.ora.neural.core.activation.ActivationFunction;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import de.ora.neural.core.activation.ActivationFunction;
 
 public abstract class Layer {
     protected int inputLength;
     protected int neurons;
     @JsonIgnore
     protected Vector layerErrorSignal; // for each neuron: (activation function gradient) * (error of output)
-    @JsonIgnore
-    private Vector input; // last input from the previous layer
-    private Matrix weights; // W
     protected Vector biases; // b
     @JsonIgnore
     protected Vector weightedInput; // z = Wa+b of this layer before application of applyActivation function
     @JsonIgnore
     protected Vector output; // applyActivation result a = s(Wa+b)
-
     @JsonSerialize(using = ActivationFunctionSerializer.class)
     @JsonDeserialize(using = ActivationFunctionDeserializer.class)
     protected ActivationFunction activationFunction;
+    @JsonIgnore
+    private Vector input; // last input from the previous layer
+    private Matrix weights; // W
 
     protected Layer() {
     }

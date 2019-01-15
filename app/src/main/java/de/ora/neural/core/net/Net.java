@@ -40,6 +40,18 @@ public class Net {
         this.learningRate = learningRate;
     }
 
+    public static Net load(final File file) throws IOException {
+        if (!file.exists() || !file.canRead()) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(file, Net.class);
+    }
+
+    public static Net load(final String filename) throws IOException {
+        File file = new File(filename + ".json");
+        return load(file);
+    }
 
     public double train(final List<TrainingData> trainingData) {
         Stopwatch stopwatch = Stopwatch.createStarted();
@@ -107,7 +119,6 @@ public class Net {
         return nextInput;
     }
 
-
     public Vector train(final Vector input, final Vector expectedOutput) {
         Vector result = propagate(input);
         Vector error = outputLayer.error(expectedOutput);
@@ -131,16 +142,16 @@ public class Net {
         return error;
     }
 
-    public void setLearningRate(double learningRate) {
-        this.learningRate = learningRate;
-    }
-
     public int getEpoch() {
         return epoch;
     }
 
     public double getLearningRate() {
         return learningRate;
+    }
+
+    public void setLearningRate(double learningRate) {
+        this.learningRate = learningRate;
     }
 
     public Deque<HiddenLayer> getLayers() {
@@ -165,19 +176,6 @@ public class Net {
     public File store(final String filename) throws IOException {
         File file = new File(filename + ".json");
         return store(file);
-    }
-
-    public static Net load(final File file) throws IOException {
-        if (!file.exists() || !file.canRead()) {
-            return null;
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(file, Net.class);
-    }
-
-    public static Net load(final String filename) throws IOException {
-        File file = new File(filename + ".json");
-        return load(file);
     }
 
     private void cleanupOldTrainingData() {

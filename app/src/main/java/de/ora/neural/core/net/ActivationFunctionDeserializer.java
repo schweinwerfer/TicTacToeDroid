@@ -1,12 +1,13 @@
 package de.ora.neural.core.net;
 
-import de.ora.neural.core.activation.ActivationFunction;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.DeserializationContext;
 import org.codehaus.jackson.map.JsonDeserializer;
 
 import java.io.IOException;
+
+import de.ora.neural.core.activation.ActivationFunction;
 
 public class ActivationFunctionDeserializer extends JsonDeserializer<ActivationFunction> {
     @Override

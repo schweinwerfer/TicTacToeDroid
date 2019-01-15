@@ -53,7 +53,8 @@ public class TicTacToeActivity extends AppCompatActivity {
             String path = "agents";
             agents = getAssets().list(path);
             for (String agent : agents) {
-                InputStream inputStream = getAssets().open(path + File.separator + agent);
+                String fileName = path + File.separator + agent;
+                InputStream inputStream = getAssets().open(fileName);
                 agentList.add(PlayingAgent.load(inputStream));
             }
             gameEngine.setAgents(agentList);

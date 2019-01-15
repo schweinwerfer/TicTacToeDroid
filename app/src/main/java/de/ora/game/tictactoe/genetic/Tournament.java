@@ -1,17 +1,10 @@
 package de.ora.game.tictactoe.genetic;
 
-import android.os.Build;
-import android.support.annotation.RequiresApi;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
-import java.util.logging.Logger;
 
 import de.ora.game.tictactoe.game.Board;
 import de.ora.game.tictactoe.game.Coordinate;
@@ -20,32 +13,37 @@ import de.ora.game.tictactoe.game.Player;
 import de.ora.game.tictactoe.game.ThreeXThreeBoard;
 import de.ora.game.tictactoe.util.Stopwatch;
 
-public class Tournament {
-    private static final Logger LOG = Logger.getLogger(Tournament.class.getSimpleName());
-    private static final int POPULATION_SIZE = 1000;
-    private List<PlayingAgent> population = new ArrayList<>();
-    int epoch = 0;
-    private double avgFitness;
-    private Random rnd;
+
+public class Tournament extends ATournament {
 
     public Tournament() {
-        rnd = new Random();
+        super(new File("tournament/agents/"));
     }
 
     public static void main(String[] args) throws IOException {
         Tournament tournament = new Tournament();
-        tournament.createPopulation(POPULATION_SIZE);
+        if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("random")) {
+                tournament.createPopulation(POPULATION_SIZE);
+            } else if (args[0].equalsIgnoreCase("load")) {
+                tournament.loadPopulation();
+            }
+        }
+
         tournament.start();
     }
+
 
     private void start() throws IOException {
         boolean isRunning = true;
 
         while (isRunning) {
             int gamesPlayed = 0;
+            fillPopulation(POPULATION_SIZE);
             LOG.info("Tournament " + (++epoch) + " size: " + population.size());
             Stopwatch stopwatch = Stopwatch.createStarted();
             Board board = new ThreeXThreeBoard();
+
             for (int i = 0; i < population.size(); i++) {
                 PlayingAgent playingAgent = population.get(i);
                 for (int j = 0; j < population.size(); j++) {
@@ -98,48 +96,9 @@ public class Tournament {
 
             LOG.info(("Tournament " + epoch + " end. best: " + bestAgent.getDetailedScore() + " avg: " + avgFitness + " worst: " + population.get(population.size() - 1).getDetailedScore()));
 
-            // pick 20 of the best
-            List<PlayingAgent> breedPool = new ArrayList<>();
-            Iterator<PlayingAgent> iterator = population.iterator();
-            int pickCnt = 100;
-
-            while (pickCnt > 0 && iterator.hasNext()) {
-                PlayingAgent picked = iterator.next();
-                iterator.remove();
-                breedPool.add(picked);
-                pickCnt--;
-            }
-
-            // pick 5 from the rest randomly
-            pickCnt = 10;
-            while (pickCnt > 0) {
-                PlayingAgent playingAgent = population.get(rnd.nextInt(population.size()));
-                if (!breedPool.contains(playingAgent)) {
-                    breedPool.add(playingAgent);
-                    pickCnt--;
-                }
-            }
-
+            List<PlayingAgent> breedPool = pickBest();
             population.clear();
-
-            // breed
-            int lastWinner = -1;
-            for (int i = 0; i < breedPool.size(); i++) {
-                for (int j = 0; j < breedPool.size(); j++) {
-                    if (population.size() >= POPULATION_SIZE) {
-                        break;
-                    }
-
-                    boolean breed = rnd.nextBoolean();
-                    if (i != j && breed) {
-                        population.add(new PlayingAgent(breedPool.get(i), breedPool.get(j)));
-                    }
-                    if (lastWinner != i && i < 100) {
-                        population.add(breedPool.get(i)); // add old winners
-                        lastWinner = i;
-                    }
-                }
-            }
+            breed(breedPool);
 
             for (PlayingAgent playingAgent : population) {
                 playingAgent.resetScore();
@@ -148,15 +107,17 @@ public class Tournament {
             fillPopulation(POPULATION_SIZE);
         }
         LOG.info("Tournament done.");
-        File agentDir = new File("tournament/agents/");
-        agentDir.mkdirs();
+        File agentDir2 = new File("tournament/agents/ng/");
+        agentDir2.mkdirs();
         for (int i = 0; i < 10; i++) {
             PlayingAgent agent = population.get(i);
-            agent.store(agentDir);
+            agent.store(agentDir2);
         }
+        population.clear();
+        fillPopulation(POPULATION_SIZE);
+        start();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private Player play(Board board, PlayingAgent playingAgent, PlayingAgent opponent) {
         board.reset();
         List<Coordinate> freeCells = board.freeCells();
@@ -189,21 +150,5 @@ public class Tournament {
         return Player.NONE;
     }
 
-    private void createPopulation(int size) {
-        for (int i = 0; i < size; i++) {
-            population.add(new PlayingAgent("a" + i));
-        }
-    }
 
-    private void fillPopulation(int size) {
-        int diff = population.size() - size;
-        if (diff >= 0) {
-            return;
-        }
-        diff = Math.abs(diff);
-
-        for (int i = 0; i < diff; i++) {
-            population.add(new PlayingAgent("a" + i));
-        }
-    }
 }

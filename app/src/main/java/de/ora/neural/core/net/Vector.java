@@ -105,7 +105,7 @@ public class Vector {
 
     public void applyOnEachElement(final VectorElementFunction function) {
         for (int i = 0; i < length; i++) {
-                data[i] = function.transform(data[i], i);
+            data[i] = function.transform(data[i], i);
         }
     }
 

@@ -1,20 +1,14 @@
 package de.ora.game.tictactoe.game;
 
-import android.os.Build;
-import android.support.annotation.RequiresApi;
+import de.ora.neural.core.net.GenericMatrix;
+import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import de.ora.neural.core.net.Matrix;
+import java.util.*;
 
 public abstract class Board {
     private int dimension;
     protected int winCnt;
-    protected Matrix board;
+    protected GenericMatrix<Integer> board;
     private Player activePlayer;
     private Map<Player, Integer> playerToPiecesCnt = new HashMap<>();
 
@@ -33,7 +27,7 @@ public abstract class Board {
     }
 
     public void reset() {
-        board = new Matrix(dimension, dimension).initWith(Player.NONE.getCode());
+        board = new GenericMatrix<>(dimension, dimension).initWith(Player.NONE.getCode());
         playerToPiecesCnt = new HashMap<>();
         activePlayer = Player.PLAYER1;
     }
@@ -41,9 +35,10 @@ public abstract class Board {
     public List<Coordinate> freeCells() {
         List<Coordinate> result = new ArrayList<>();
         for (int y = 0; y < board.data.length; y++) {
-            double[] row = board.data[y];
+            Object[] row = board.getRow(y);
             for (int x = 0; x < row.length; x++) {
-                if (row[x] == 0) {
+                Integer value = (Integer) row[x];
+                if (value == 0) {
                     result.add(new Coordinate(y, x));
                 }
             }
@@ -52,7 +47,6 @@ public abstract class Board {
         return result;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     public Player findWinner() {
         if (winnerCheckNotNeeded()) {
             return Player.NONE;
@@ -61,18 +55,19 @@ public abstract class Board {
         int currentCnt = 0;
 
         // columns
-        for (int c = 0; c < board.getColumns(); c++) {
+        for (int c = 0; c < board.getColumnCount(); c++) {
             currentCode = Player.NONE.getCode();
             currentCnt = 0;
-            for (Double value : board.getColumn(c).getData()) {
-                if (value != Player.NONE.getCode()) {
-                    if (value.intValue() == currentCode) {
+            for (Object value : board.getColumn(c)) {
+                Integer intValue = (Integer) value;
+                if (intValue != Player.NONE.getCode()) {
+                    if (intValue.intValue() == currentCode) {
                         currentCnt++;
                         if (currentCnt == winCnt) {
                             return Player.from(currentCode);
                         }
                     } else {
-                        currentCode = value.intValue();
+                        currentCode = intValue.intValue();
                         currentCnt = 1;
                     }
                 } else {
@@ -86,18 +81,19 @@ public abstract class Board {
         currentCnt = 0;
 
         // rows
-        for (double[] row : board.data) {
+        for (Object[] row : board.getRows()) {
             currentCode = Player.NONE.getCode();
             currentCnt = 0;
-            for (Double value : row) {
-                if (value != Player.NONE.getCode()) {
-                    if (value.intValue() == currentCode) {
+            for (Object value : row) {
+                Integer intValue = (Integer) value;
+                if (intValue != Player.NONE.getCode()) {
+                    if (intValue.intValue() == currentCode) {
                         currentCnt++;
                         if (currentCnt == winCnt) {
                             return Player.from(currentCode);
                         }
                     } else {
-                        currentCode = value.intValue();
+                        currentCode = intValue.intValue();
                         currentCnt = 1;
                     }
                 } else {
@@ -111,11 +107,23 @@ public abstract class Board {
         return findDiagonalWinner();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     private boolean winnerCheckNotNeeded() {
         Integer player1Cnt = this.playerToPiecesCnt.getOrDefault(Player.PLAYER1, 0);
         Integer player2Cnt = this.playerToPiecesCnt.getOrDefault(Player.PLAYER2, 0);
         return player1Cnt < winCnt && player2Cnt < winCnt;
+    }
+
+    public int getPlayedPiecesCount() {
+        int sum = 0;
+        for (Integer cnt : playerToPiecesCnt.values()) {
+            if (cnt == null) {
+                continue;
+            }
+
+            sum += cnt;
+        }
+
+        return sum;
     }
 
     protected abstract Player findDiagonalWinner();
@@ -124,9 +132,8 @@ public abstract class Board {
         return activePlayer;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean set(int row, int column) {
-        double existing = board.set(row, column, activePlayer.getCode());
+        Integer existing = board.set(row, column, activePlayer.getCode());
         if (existing != 0) {
             board.set(row, column, existing);
             return false;
@@ -138,21 +145,11 @@ public abstract class Board {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Active Player: ").append(activePlayer).append(System.lineSeparator());
-        sb.append(board);
-
-        return sb.toString();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public String asKey() {
-        StringBuilder sb = new StringBuilder(activePlayer.name()).append(System.lineSeparator());
-        for (double[] row : this.board.data) {
-            for (double cell : row) {
+        StringBuilder sb = new StringBuilder().append(activePlayer.name()).append(System.lineSeparator());
+        for (Object[] row : this.board.getRows()) {
+            for (Object cell : row) {
                 sb.append(cell).append(' ');
             }
             sb.deleteCharAt(sb.length() - 1);
@@ -162,11 +159,53 @@ public abstract class Board {
         return sb.toString();
     }
 
+    public String asKey() {
+        StringBuilder sb = new StringBuilder().append(activePlayer.getCode()).append("|");
+        sb.append(this.board.getRowCount()).append(',').append(this.board.getColumnCount()).append("|");
+        for (Object[] row : this.board.getRows()) {
+            for (Object cell : row) {
+                sb.append(cell).append(',');
+            }
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+
+    public static Board fromKey(final String key) {
+        Board result = new ThreeXThreeBoard();
+        String[] parts = StringUtils.split(key, "|");
+        Player player = Player.from(Integer.valueOf(parts[0]));
+        String[] dimensionsString = parts[1].split(",");
+        int rows = Integer.valueOf(dimensionsString[0]);
+        int columns = Integer.valueOf(dimensionsString[1]);
+        String[] cellsString = parts[2].split(",");
+
+        int i = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < columns; c++) {
+                Integer value = Integer.valueOf(cellsString[i++]);
+                result.board.set(r, c, value);
+            }
+        }
+
+        result.setActivePlayer(player);
+
+        return result;
+    }
+
+    private void setActivePlayer(Player player) {
+        this.activePlayer = player;
+    }
+
     public abstract Board copy();
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean set(final Coordinate move) {
         return this.set(move.row, move.column);
+    }
+
+    public Integer get(int row, int column) {
+        return board.getRawCell(row, column);
     }
 
     @Override
@@ -179,13 +218,16 @@ public abstract class Board {
                 board.equals(board1.board);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int hashCode() {
         return Objects.hash(dimension, winCnt, board);
     }
 
-    public double get(int row, int column) {
-        return board.getRawCell(row, column);
+    public Coordinate findWinningMoveForPlayer(final Player player) {
+        if (playerToPiecesCnt.getOrDefault(player, 0) >= (winCnt - 1)) {
+
+        }
+
+        return null;
     }
 }

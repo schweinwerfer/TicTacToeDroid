@@ -34,7 +34,7 @@ public class GameEngine {
         return false;
     }
 
-    public double elements(int x, int y) {
+    public int elements(int x, int y) {
         return board.get(x, y);
     }
 

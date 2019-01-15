@@ -1,8 +1,5 @@
 package de.ora.game.tictactoe.genetic;
 
-import android.os.Build;
-import android.support.annotation.RequiresApi;
-
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -22,12 +19,13 @@ import de.ora.game.tictactoe.game.Coordinate;
 import de.ora.game.tictactoe.game.GameResult;
 import de.ora.game.tictactoe.game.Player;
 
+
 public class PlayingAgent {
+    protected Map<String, List<Coordinate>> moves = new HashMap<>();
+    @JsonIgnore
+    protected Random rnd = new Random();
     private String name;
     private int generation;
-    private Map<String, List<Coordinate>> moves = new HashMap<>();
-    @JsonIgnore
-    private Random rnd = new Random();
     private int winCnt = 0;
     private int loseCnt = 0;
     private int drawCnt = 0;
@@ -46,7 +44,7 @@ public class PlayingAgent {
         this.generation = 1;
     }
 
-    public PlayingAgent(final PlayingAgent father, final PlayingAgent mother) {
+    private PlayingAgent(final PlayingAgent father, final PlayingAgent mother) {
         this.generation = ((father.generation + mother.generation) / 2) + 1;
         this.name = Math.abs((father.name + mother.name).hashCode()) + "-" + this.generation;
 
@@ -68,13 +66,38 @@ public class PlayingAgent {
             fillWithMissingMoves(this.moves, mother.moves);
         }
 
-        if (rnd.nextInt(100) % 42 == 0) {
-            Set<String> keysSet = this.moves.keySet();
-            List<String> keys = new ArrayList<String>();
-            keys.addAll(keysSet);
+
+    }
+
+    public static PlayingAgent load(final File file, final Class<? extends PlayingAgent> type) throws IOException {
+        if (!file.exists() || !file.canRead()) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(file, type);
+    }
+
+    public static PlayingAgent load(final String filename, final Class<? extends PlayingAgent> type) throws IOException {
+        File file = new File(filename + ".json");
+        return load(file, type);
+    }
+
+    public PlayingAgent combine(final PlayingAgent other) {
+        if (rnd.nextBoolean()) {
+            return new PlayingAgent(this, other);
+        } else {
+            return new PlayingAgent(other, this);
+        }
+    }
+
+    public PlayingAgent mutate() {
+        int mutations = rnd.nextInt(10);
+        final List<String> keys = new ArrayList<String>(this.moves.keySet());
+        for (int i = 0; i < mutations; i++) {
             this.moves.remove(keys.get(rnd.nextInt(keys.size())));
         }
 
+        return this;
     }
 
     private void addDrawMoves(final Map<String, List<Coordinate>> kidsMoves) {
@@ -92,7 +115,6 @@ public class PlayingAgent {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public Coordinate play(final Player player, final Board board) {
         if (board.activePlayer() != player) {
             throw new IllegalArgumentException("Player " + player + " is not active");
@@ -106,18 +128,22 @@ public class PlayingAgent {
         }
 
         if (possibleMoves.isEmpty()) {
-            List<Coordinate> freeCells = board.freeCells();
-            if (freeCells.size() > 0) {
-                // choose randomly one move
-                possibleMoves.add(freeCells.get(rnd.nextInt(freeCells.size())));
-            } else {
-                throw new IllegalArgumentException("No free cell left on board for move!");
-            }
+            possibleMoves.add(createRandomMove(board));
         }
 
         Coordinate coordinate = possibleMoves.get(0);
         this.lastMoveKey = key;
         return coordinate;
+    }
+
+    protected Coordinate createRandomMove(Board board) {
+        List<Coordinate> freeCells = board.freeCells();
+        if (freeCells.size() > 0) {
+            // choose randomly one move
+            return freeCells.get(rnd.nextInt(freeCells.size()));
+        } else {
+            throw new IllegalArgumentException("No free cell left on board for move!");
+        }
     }
 
     public void feedback(final GameResult result) {
@@ -128,6 +154,7 @@ public class PlayingAgent {
                 break;
             case LOST:
                 this.loseCnt++;
+                this.moves.remove(this.lastMoveKey); // discard really bad moves
                 break;
             case DRAW:
                 this.drawMoveKeys.add(lastMoveKey);
@@ -171,11 +198,9 @@ public class PlayingAgent {
             return;
         }
 
-        while (kidsMoves.size() < parentMovesSize) {
-            for (Map.Entry<String, List<Coordinate>> entry : parentMoves.entrySet()) {
-                if (!kidsMoves.containsKey(entry.getKey())) {
-                    kidsMoves.put(entry.getKey(), entry.getValue());
-                }
+        for (Map.Entry<String, List<Coordinate>> entry : parentMoves.entrySet()) {
+            if (!kidsMoves.containsKey(entry.getKey())) {
+                kidsMoves.put(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -231,23 +256,11 @@ public class PlayingAgent {
         return store(file);
     }
 
-    public static PlayingAgent load(final File file) throws IOException {
-        if (!file.exists() || !file.canRead()) {
-            return null;
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(file, PlayingAgent.class);
-    }
-
     public static PlayingAgent load(final InputStream stream) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(stream, PlayingAgent.class);
     }
 
-    public static PlayingAgent load(final String filename) throws IOException {
-        File file = new File(filename + ".json");
-        return load(file);
-    }
 
     public Map<String, List<Coordinate>> getMoves() {
         return moves;
